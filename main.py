@@ -30,6 +30,9 @@ inverse_constant_matrix_binary = [
     [0x2, 0x9],
 ]
 
+Rcon_1 = "1110"
+Rcon_2 = "1010"
+
 
 def main():
     """This is the main function."""
@@ -53,11 +56,9 @@ def main():
 
     shifted_row = shift_rows(text_binary_value)
     shifted_row_string = "".join(shifted_row)
-    print(f"ShiftRows({text_block}) = ", shifted_row_string)
 
     mixed_column = mix_columns(text_block)
     mixed_column_string = "".join(mixed_column)
-    print(f"MixColumns({text_block}) = ", mixed_column_string)
 
     key = input("Enter a key: ")
     if len(key) > 4:
@@ -75,9 +76,8 @@ def main():
         [hex(int(binary, 2))[2:] for binary in round_key_two]
     )
 
-    print(
-        f"GenerateRoundKets({key}) = ({round_key_one_string}, {round_key_two_string})"
-    )
+    decrypted_block = ""
+    print(f"Decrypted Block: {decrypted_block}")
 
 
 def sub_nibbles_func(binary_value):
@@ -127,17 +127,25 @@ def mix_columns(hex_input_value):
     processed_nibbles = []
 
     d0 = finite_field_multiply(
-        int(nibbles[0], 2), constant_matrix_binary[0][0]
-    ) ^ finite_field_multiply(int(nibbles[1], 2), constant_matrix_binary[0][1])
+        int(nibbles[0], 2), inverse_constant_matrix_binary[0][0]
+    ) ^ finite_field_multiply(
+        int(nibbles[1], 2), inverse_constant_matrix_binary[0][1]
+    )
     d1 = finite_field_multiply(
-        int(nibbles[0], 2), constant_matrix_binary[1][0]
-    ) ^ finite_field_multiply(int(nibbles[1], 2), constant_matrix_binary[1][1])
+        int(nibbles[0], 2), inverse_constant_matrix_binary[1][0]
+    ) ^ finite_field_multiply(
+        int(nibbles[1], 2), inverse_constant_matrix_binary[1][1]
+    )
     d2 = finite_field_multiply(
-        int(nibbles[2], 2), constant_matrix_binary[0][0]
-    ) ^ finite_field_multiply(int(nibbles[3], 2), constant_matrix_binary[0][1])
+        int(nibbles[2], 2), inverse_constant_matrix_binary[0][0]
+    ) ^ finite_field_multiply(
+        int(nibbles[3], 2), inverse_constant_matrix_binary[0][1]
+    )
     d3 = finite_field_multiply(
-        int(nibbles[2], 2), constant_matrix_binary[1][0]
-    ) ^ finite_field_multiply(int(nibbles[3], 2), constant_matrix_binary[1][1])
+        int(nibbles[2], 2), inverse_constant_matrix_binary[1][0]
+    ) ^ finite_field_multiply(
+        int(nibbles[3], 2), inverse_constant_matrix_binary[1][1]
+    )
 
     processed_nibbles.append(hex(d0)[2:])
     processed_nibbles.append(hex(d1)[2:])
