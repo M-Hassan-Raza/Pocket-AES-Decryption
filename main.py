@@ -145,3 +145,84 @@ def mix_columns(hex_input_value):
     processed_nibbles.append(hex(d3)[2:])
 
     return processed_nibbles
+
+
+def generate_round_keys(binary_key):
+    """This function generates the round keys for Pocket AES encryption method."""
+    round_key_one = []
+    round_key_two = []
+    binary_key_chunks = [
+        binary_key[i : i + 4] for i in range(0, len(binary_key), 4)
+    ]
+    round_key_one.append(
+        bitwise_xor(
+            bitwise_xor(
+                binary_key_chunks[0],
+                bin(int(sub_nibbles_func(binary_key_chunks[3])[0], 16))[
+                    2:
+                ].zfill(4),
+            ),
+            Rcon_1,
+        )
+    )
+    round_key_one.append(bitwise_xor(binary_key_chunks[1], round_key_one[0]))
+    round_key_one.append(bitwise_xor(binary_key_chunks[2], round_key_one[1]))
+    round_key_one.append(bitwise_xor(binary_key_chunks[3], round_key_one[2]))
+
+    round_key_two.append(
+        bitwise_xor(
+            bitwise_xor(
+                round_key_one[0],
+                bin(int(sub_nibbles_func(round_key_one[3])[0], 16))[2:].zfill(
+                    4
+                ),
+            ),
+            Rcon_2,
+        )
+    )
+    round_key_two.append(bitwise_xor(round_key_one[1], round_key_two[0]))
+    round_key_two.append(bitwise_xor(round_key_one[2], round_key_two[1]))
+    round_key_two.append(bitwise_xor(round_key_one[3], round_key_two[2]))
+
+    return round_key_one, round_key_two
+
+
+def bitwise_xor(bin_str1, bin_str2):
+    """Perform bitwise XOR between two binary strings of equal length."""
+    if len(bin_str1) != len(bin_str2):
+        raise ValueError("Binary strings must have the same length")
+
+    result = ""
+    for bit1, bit2 in zip(bin_str1, bin_str2):
+        result += "1" if bit1 != bit2 else "0"
+
+    return result
+
+
+def finite_field_multiply(first_number, second_number):
+    """Perform multiplication in the finite field GF(2^4) modulo 𝒙^4 + 𝒙 + 𝟏."""
+    # Initialize m to 0 to store the result
+    multiplication_result = 0
+
+    while second_number > 0:
+        # Check if the LSB of b is 1
+        if second_number & 1 == 1:
+            # Perform bitwise XOR to accumulate the product
+            multiplication_result ^= first_number
+
+        # Left-shift a by 1 bit (equivalent to multiplying by 2 in the field)
+        first_number <<= 1
+
+        # Check if the fourth bit of a is set
+        if first_number & 0b10000:
+            # Perform reduction modulo the irreducible polynomial
+            first_number ^= 0b10011  # Irreducible polynomial 𝒙^4 + 𝒙 + 𝟏
+
+        # Right-shift b by 1 bit (equivalent to dividing by 2 in the field)
+        second_number >>= 1
+
+    return multiplication_result
+
+
+if __name__ == "__main__":
+    main()
