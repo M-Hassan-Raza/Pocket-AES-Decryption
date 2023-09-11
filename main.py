@@ -1,3 +1,5 @@
+"""This module implements the Pocket AES Decryption algorithm."""
+
 inverse_substitution_box = {
     "0000": "1010",
     "0001": "0000",
