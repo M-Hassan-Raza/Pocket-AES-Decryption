@@ -78,3 +78,33 @@ def main():
     print(
         f"GenerateRoundKets({key}) = ({round_key_one_string}, {round_key_two_string})"
     )
+
+
+
+def sub_nibbles_func(binary_value):
+    """This function performs the substitution of nibbles."""
+    sub_nibbles_data = []
+
+    # Check if the input is 4 bits or 16 bits
+    if len(binary_value) == 4:
+        # Input is already a 4-bit nibble
+        sub_nibbles_data.append(substitution_box[binary_value])
+    elif len(binary_value) == 16:
+        # Input is a 16-bit binary value, split it into 4-bit nibbles
+        for i in range(0, 16, 4):
+            sub_nibbles_data.append(substitution_box[binary_value[i : i + 4]])
+    else:
+        raise ValueError("Input length must be either 4 or 16 bits")
+
+    hexadecimal_values = []
+
+    for binary_value in sub_nibbles_data:
+        # Convert the binary to an integer and then to a hexadecimal nibble
+        hex_value = hex(int(binary_value, 2))[2:]
+
+        # Append the hexadecimal nibble to the list
+        hexadecimal_values.append(hex_value)
+
+    return hexadecimal_values
+
+
