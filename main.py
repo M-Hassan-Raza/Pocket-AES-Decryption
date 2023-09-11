@@ -36,48 +36,47 @@ Rcon_2 = "1010"
 
 def main():
     """This is the main function."""
-    sub_nibbles = []
-    shifted_row = []
-    mixed_column = []
 
-    text_block = input("Enter a text block: ")
-    if len(text_block) > 4:
+    cipher_text_block = input("Enter the ciphertext block = ")
+    if len(cipher_text_block) > 4:
         print("Text Block invalid. It should have exactly 4 characters.")
         return
-    text_block = text_block.zfill(4)
+    cipher_text_block = cipher_text_block.zfill(4)
 
-    # Convert the hexadecimal to binary and remove the '0b' prefix and make the string 16 bit
-    text_binary_value = bin(int(text_block, 16))[2:].zfill(16)
-
-    sub_nibbles = sub_nibbles_func(text_binary_value)
-    sub_nibbles_string = "".join(sub_nibbles)
-    sub_nibbles_binary_value = bin(int("".join(sub_nibbles), 16))[2:]
-    print(f"SubNibbles({text_block}) = ", sub_nibbles_string)
-
-    shifted_row = shift_rows(text_binary_value)
-    shifted_row_string = "".join(shifted_row)
-
-    mixed_column = mix_columns(text_block)
-    mixed_column_string = "".join(mixed_column)
-
-    key = input("Enter a key: ")
-    if len(key) > 4:
+    decryption_key = input("Enter the decryption key = ")
+    if len(decryption_key) > 4:
         print("Key invalid. It should have exactly 4 characters.")
         return
-    key = key.zfill(4)
-    # Convert the hexadecimal to binary and remove the '0b' prefix
-    key_binary_value = bin(int(key, 16))[2:]
-    key_binary_value = key_binary_value.zfill(16)
-    round_key_one, round_key_two = generate_round_keys(key_binary_value)
-    round_key_one_string = "".join(
-        [hex(int(binary, 2))[2:] for binary in round_key_one]
-    )
-    round_key_two_string = "".join(
-        [hex(int(binary, 2))[2:] for binary in round_key_two]
-    )
+    decryption_key = decryption_key.zfill(4)
 
-    decrypted_block = ""
+    # Convert the hexadecimal to binary and remove the '0b' prefix and make the string 16 bit
+    cipher_text_binary_value = bin(int(cipher_text_block, 16))[2:].zfill(16)
+
+    decrypted_block = decrypt_data(cipher_text_binary_value, decryption_key)
     print(f"Decrypted Block: {decrypted_block}")
+
+
+def decrypt_data(cipher_text_binary_value, decryption_key):
+    """This function decrypts the cipher text using the decryption key."""
+    round_key_one, round_key_two = generate_round_keys(decryption_key)
+
+    # Round 1
+    sub_nibbles_data = sub_nibbles_func(cipher_text_binary_value)
+    shifted_rows_data = shift_rows("".join(sub_nibbles_data))
+    round_key_xor_data = bitwise_xor(
+        "".join(shifted_rows_data), round_key_two[0]
+    )
+    mix_columns_data = mix_columns(round_key_xor_data)
+
+    # Round 2
+    sub_nibbles_data = sub_nibbles_func("".join(mix_columns_data))
+    shifted_rows_data = shift_rows("".join(sub_nibbles_data))
+    round_key_xor_data = bitwise_xor(
+        "".join(shifted_rows_data), round_key_one[0]
+    )
+    decrypted_data = round_key_xor_data
+
+    return "".join(decrypted_data)
 
 
 def sub_nibbles_func(binary_value):
@@ -87,11 +86,13 @@ def sub_nibbles_func(binary_value):
     # Check if the input is 4 bits or 16 bits
     if len(binary_value) == 4:
         # Input is already a 4-bit nibble
-        sub_nibbles_data.append(substitution_box[binary_value])
+        sub_nibbles_data.append(inverse_substitution_box[binary_value])
     elif len(binary_value) == 16:
         # Input is a 16-bit binary value, split it into 4-bit nibbles
         for i in range(0, 16, 4):
-            sub_nibbles_data.append(substitution_box[binary_value[i : i + 4]])
+            sub_nibbles_data.append(
+                inverse_substitution_box[binary_value[i : i + 4]]
+            )
     else:
         raise ValueError("Input length must be either 4 or 16 bits")
 
