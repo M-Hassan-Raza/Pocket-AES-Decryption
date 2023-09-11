@@ -80,7 +80,6 @@ def main():
     )
 
 
-
 def sub_nibbles_func(binary_value):
     """This function performs the substitution of nibbles."""
     sub_nibbles_data = []
@@ -121,3 +120,28 @@ def shift_rows(binary_value):
     return shifted_binary_value
 
 
+def mix_columns(hex_input_value):
+    """This function performs the mix columns operation."""
+    binary_value = bin(int(hex_input_value, 16))[2:]
+    nibbles = [binary_value[i : i + 4] for i in range(0, len(binary_value), 4)]
+    processed_nibbles = []
+
+    d0 = finite_field_multiply(
+        int(nibbles[0], 2), constant_matrix_binary[0][0]
+    ) ^ finite_field_multiply(int(nibbles[1], 2), constant_matrix_binary[0][1])
+    d1 = finite_field_multiply(
+        int(nibbles[0], 2), constant_matrix_binary[1][0]
+    ) ^ finite_field_multiply(int(nibbles[1], 2), constant_matrix_binary[1][1])
+    d2 = finite_field_multiply(
+        int(nibbles[2], 2), constant_matrix_binary[0][0]
+    ) ^ finite_field_multiply(int(nibbles[3], 2), constant_matrix_binary[0][1])
+    d3 = finite_field_multiply(
+        int(nibbles[2], 2), constant_matrix_binary[1][0]
+    ) ^ finite_field_multiply(int(nibbles[3], 2), constant_matrix_binary[1][1])
+
+    processed_nibbles.append(hex(d0)[2:])
+    processed_nibbles.append(hex(d1)[2:])
+    processed_nibbles.append(hex(d2)[2:])
+    processed_nibbles.append(hex(d3)[2:])
+
+    return processed_nibbles
