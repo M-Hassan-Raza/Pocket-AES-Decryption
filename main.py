@@ -108,3 +108,16 @@ def sub_nibbles_func(binary_value):
     return hexadecimal_values
 
 
+def shift_rows(binary_value):
+    """This function performs the shift rows operation."""
+    nibbles = [binary_value[i : i + 4] for i in range(0, len(binary_value), 4)]
+    nibbles[0], nibbles[2] = nibbles[2], nibbles[0]
+    shifted_binary_value = []
+    for binary_value in nibbles:
+        hex_value = hex(int(binary_value, 2))[2:]
+        shifted_binary_value.append(hex_value)
+
+    binary_value = "".join(shifted_binary_value)
+    return shifted_binary_value
+
+
