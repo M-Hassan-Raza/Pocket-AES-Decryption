@@ -70,9 +70,6 @@ def main():
     decryption_key_binary_value = bin(int(decryption_key, 16))[2:].zfill(16)
     cipher_text_binary_value = bin(int(cipher_text_block, 16))[2:].zfill(16)
 
-    print(f"Cipher Binary Value: {cipher_text_binary_value}")
-    print(f"Decryption Key Binary Value: {decryption_key_binary_value}")
-
     decrypted_block = decrypt_data(
         cipher_text_binary_value, decryption_key_binary_value
     )
