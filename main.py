@@ -261,13 +261,6 @@ def generate_round_keys(binary_key):
     round_key_two.append(bitwise_xor(round_key_one[2], round_key_two[1]))
     round_key_two.append(bitwise_xor(round_key_one[3], round_key_two[2]))
 
-    hex_value_one = "".join(round_key_one)
-    hex_value_two = "".join(round_key_two)
-    hex_values_one_hexa = hex(int(hex_value_one, 2))[2:].zfill(4)
-    hex_values_two_hexa = hex(int(hex_value_two, 2))[2:].zfill(4)
-
-    print(f"Round Key 1: {hex_values_one_hexa}")
-    print(f"Round Key 2: {hex_values_two_hexa}")
 
     return round_key_one, round_key_two
 
