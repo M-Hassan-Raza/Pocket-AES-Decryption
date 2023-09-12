@@ -84,31 +84,22 @@ def decrypt_data(cipher_text_binary_value, decryption_key):
     round_key_two = "".join(round_key_two)
 
     # Round 1
-    print(f"Round Key 2: {round_key_two}")
     shifted_rows_data = shift_rows(cipher_text_binary_value)
     shifted_rows_data = "".join(shifted_rows_data)
     shifted_rows_data = bin(int(shifted_rows_data, 16))[2:].zfill(16)
-    print(f"Shifted Rows Data: {shifted_rows_data}")
     after_round_key_xor_data = bitwise_xor(shifted_rows_data, round_key_two)
-    print(f"After Round Key XOR Data: {after_round_key_xor_data}")
     sub_nibbles_data = sub_nibbles_func(after_round_key_xor_data)
     sub_nibbles_data = "".join(sub_nibbles_data)
     sub_nibbles_data = bin(int(sub_nibbles_data, 16))[2:].zfill(16)
-    print(f"Sub Nibbles Data: {sub_nibbles_data}")
 
     # Round 2
-    print(f"Round Key 1: {round_key_one}")
     shifted_rows_data = shift_rows(sub_nibbles_data)
     shifted_rows_data = "".join(shifted_rows_data)
-    print(f"Shifted Rows Data: {shifted_rows_data}")
     mixed_columns_data = mix_columns(shifted_rows_data)
     mixed_columns_data = "".join(mixed_columns_data)
     mixed_columns_data = bin(int(mixed_columns_data, 16))[2:].zfill(16)
-    print(f"Mixed Columns Data: {mixed_columns_data}")
     after_round_key_xor_data = bitwise_xor(mixed_columns_data, round_key_one)
-    print(f"After Round Key XOR Data: {after_round_key_xor_data}")
     sub_nibbles_data = sub_nibbles_func(after_round_key_xor_data)
-    print(f"Sub Nibbles Data: {sub_nibbles_data}")
 
     decrypted_data = []
     for hex_value in sub_nibbles_data:
@@ -257,7 +248,6 @@ def generate_round_keys(binary_key):
     round_key_two.append(bitwise_xor(round_key_one[1], round_key_two[0]))
     round_key_two.append(bitwise_xor(round_key_one[2], round_key_two[1]))
     round_key_two.append(bitwise_xor(round_key_one[3], round_key_two[2]))
-
 
     return round_key_one, round_key_two
 
