@@ -1,37 +1,37 @@
 """This module implements the Pocket AES Decryption algorithm."""
 
-inverse_substitution_box = {
-    "0000": "1010",
-    "0001": "0000",
-    "0010": "1001",
-    "0011": "1110",
-    "0100": "0110",
-    "0101": "0011",
-    "0110": "1111",
-    "0111": "0101",
-    "1000": "0001",
-    "1001": "1101",
-    "1010": "1100",
-    "1011": "0111",
-    "1100": "1011",
-    "1101": "0100",
-    "1110": "0010",
-    "1111": "1000",
+INVERSE_SUBSTITUTION_BOX = {
+    "1010": "0000",
+    "0000": "0001",
+    "1001": "0010",
+    "1110": "0011",
+    "0110": "0100",
+    "0011": "0101",
+    "1111": "0110",
+    "0101": "0111",
+    "0001": "1000",
+    "1101": "1001",
+    "1100": "1010",
+    "0111": "1011",
+    "1011": "1100",
+    "0100": "1101",
+    "0010": "1110",
+    "1000": "1111",
 }
 
 
-inverse_constant_matrix = [
+INVERSE_CONSTANT_MATRIX = [
     [9, 2],
     [2, 9],
 ]
 
-inverse_constant_matrix_binary = [
+INVERSE_CONSTANT_MATRIX_BINARY = [
     [0x9, 0x2],
     [0x2, 0x9],
 ]
 
-Rcon_1 = "1110"
-Rcon_2 = "1010"
+RCON_1 = "1110"
+RCON_2 = "1010"
 
 
 def main():
@@ -48,33 +48,53 @@ def main():
         print("Key invalid. It should have exactly 4 characters.")
         return
     decryption_key = decryption_key.zfill(4)
-
+    decryption_key_binary_value = bin(int(decryption_key, 16))[2:].zfill(16)
     # Convert the hexadecimal to binary and remove the '0b' prefix and make the string 16 bit
     cipher_text_binary_value = bin(int(cipher_text_block, 16))[2:].zfill(16)
 
-    decrypted_block = decrypt_data(cipher_text_binary_value, decryption_key)
+    decrypted_block = decrypt_data(
+        cipher_text_binary_value, decryption_key_binary_value
+    )
     print(f"Decrypted Block: {decrypted_block}")
 
 
 def decrypt_data(cipher_text_binary_value, decryption_key):
     """This function decrypts the cipher text using the decryption key."""
+
     round_key_one, round_key_two = generate_round_keys(decryption_key)
+    round_key_one = "".join(round_key_one)
+    round_key_two = "".join(round_key_two)
 
     # Round 1
-    sub_nibbles_data = sub_nibbles_func(cipher_text_binary_value)
-    shifted_rows_data = shift_rows("".join(sub_nibbles_data))
-    round_key_xor_data = bitwise_xor(
-        "".join(shifted_rows_data), round_key_two[0]
-    )
-    mix_columns_data = mix_columns(round_key_xor_data)
+    print(f"Round Key 2: {round_key_two}")
+    shifted_rows_data = shift_rows(cipher_text_binary_value)
+    shifted_rows_data = "".join(shifted_rows_data)
+    shifted_rows_data = bin(int(shifted_rows_data, 16))[2:].zfill(16)
+    print(f"Shifted Rows Data: {shifted_rows_data}")
+    after_round_key_xor_data = bitwise_xor(shifted_rows_data, round_key_two)
+    print(f"After Round Key XOR Data: {after_round_key_xor_data}")
+    sub_nibbles_data = sub_nibbles_func(after_round_key_xor_data)
+    sub_nibbles_data = "".join(sub_nibbles_data)
+    sub_nibbles_data = bin(int(sub_nibbles_data, 16))[2:].zfill(16)
+    print(f"Sub Nibbles Data: {sub_nibbles_data}")
 
     # Round 2
-    sub_nibbles_data = sub_nibbles_func("".join(mix_columns_data))
-    shifted_rows_data = shift_rows("".join(sub_nibbles_data))
-    round_key_xor_data = bitwise_xor(
-        "".join(shifted_rows_data), round_key_one[0]
-    )
-    decrypted_data = round_key_xor_data
+    print(f"Round Key 1: {round_key_one}")
+    shifted_rows_data = shift_rows(sub_nibbles_data)
+    shifted_rows_data = "".join(shifted_rows_data)
+    print(f"Shifted Rows Data: {shifted_rows_data}")
+    mixed_columns_data = mix_columns(shifted_rows_data)
+    mixed_columns_data = "".join(mixed_columns_data)
+    mixed_columns_data = bin(int(mixed_columns_data, 16))[2:].zfill(16)
+    print(f"Mixed Columns Data: {mixed_columns_data}")
+    after_round_key_xor_data = bitwise_xor(mixed_columns_data, round_key_one)
+    print(f"After Round Key XOR Data: {after_round_key_xor_data}")
+    sub_nibbles_data = sub_nibbles_func(after_round_key_xor_data)
+    print(f"Sub Nibbles Data: {sub_nibbles_data}")
+
+    decrypted_data = []
+    for hex_value in sub_nibbles_data:
+        decrypted_data.append(hex_value)
 
     return "".join(decrypted_data)
 
@@ -82,16 +102,15 @@ def decrypt_data(cipher_text_binary_value, decryption_key):
 def sub_nibbles_func(binary_value):
     """This function performs the substitution of nibbles."""
     sub_nibbles_data = []
-
     # Check if the input is 4 bits or 16 bits
     if len(binary_value) == 4:
         # Input is already a 4-bit nibble
-        sub_nibbles_data.append(inverse_substitution_box[binary_value])
+        sub_nibbles_data.append(INVERSE_SUBSTITUTION_BOX[binary_value])
     elif len(binary_value) == 16:
         # Input is a 16-bit binary value, split it into 4-bit nibbles
         for i in range(0, 16, 4):
             sub_nibbles_data.append(
-                inverse_substitution_box[binary_value[i : i + 4]]
+                INVERSE_SUBSTITUTION_BOX[binary_value[i : i + 4]]
             )
     else:
         raise ValueError("Input length must be either 4 or 16 bits")
@@ -128,24 +147,24 @@ def mix_columns(hex_input_value):
     processed_nibbles = []
 
     d0 = finite_field_multiply(
-        int(nibbles[0], 2), inverse_constant_matrix_binary[0][0]
+        int(nibbles[0], 2), INVERSE_CONSTANT_MATRIX_BINARY[0][0]
     ) ^ finite_field_multiply(
-        int(nibbles[1], 2), inverse_constant_matrix_binary[0][1]
+        int(nibbles[1], 2), INVERSE_CONSTANT_MATRIX_BINARY[0][1]
     )
     d1 = finite_field_multiply(
-        int(nibbles[0], 2), inverse_constant_matrix_binary[1][0]
+        int(nibbles[0], 2), INVERSE_CONSTANT_MATRIX_BINARY[1][0]
     ) ^ finite_field_multiply(
-        int(nibbles[1], 2), inverse_constant_matrix_binary[1][1]
+        int(nibbles[1], 2), INVERSE_CONSTANT_MATRIX_BINARY[1][1]
     )
     d2 = finite_field_multiply(
-        int(nibbles[2], 2), inverse_constant_matrix_binary[0][0]
+        int(nibbles[2], 2), INVERSE_CONSTANT_MATRIX_BINARY[0][0]
     ) ^ finite_field_multiply(
-        int(nibbles[3], 2), inverse_constant_matrix_binary[0][1]
+        int(nibbles[3], 2), INVERSE_CONSTANT_MATRIX_BINARY[0][1]
     )
     d3 = finite_field_multiply(
-        int(nibbles[2], 2), inverse_constant_matrix_binary[1][0]
+        int(nibbles[2], 2), INVERSE_CONSTANT_MATRIX_BINARY[1][0]
     ) ^ finite_field_multiply(
-        int(nibbles[3], 2), inverse_constant_matrix_binary[1][1]
+        int(nibbles[3], 2), INVERSE_CONSTANT_MATRIX_BINARY[1][1]
     )
 
     processed_nibbles.append(hex(d0)[2:])
@@ -171,7 +190,7 @@ def generate_round_keys(binary_key):
                     2:
                 ].zfill(4),
             ),
-            Rcon_1,
+            RCON_1,
         )
     )
     round_key_one.append(bitwise_xor(binary_key_chunks[1], round_key_one[0]))
@@ -186,7 +205,7 @@ def generate_round_keys(binary_key):
                     4
                 ),
             ),
-            Rcon_2,
+            RCON_2,
         )
     )
     round_key_two.append(bitwise_xor(round_key_one[1], round_key_two[0]))
