@@ -1,6 +1,25 @@
 """This module implements the Pocket AES Decryption algorithm."""
 
-inverse_substitution_box = {
+INVERSE_SUBSTITUTION_BOX = {
+    "1010": "0000",
+    "0000": "0001",
+    "1001": "0010",
+    "1110": "0011",
+    "0110": "0100",
+    "0011": "0101",
+    "1111": "0110",
+    "0101": "0111",
+    "0001": "1000",
+    "1101": "1001",
+    "1100": "1010",
+    "0111": "1011",
+    "1011": "1100",
+    "0100": "1101",
+    "0010": "1110",
+    "1000": "1111",
+}
+
+SUBSTITUTION_BOX = {
     "0000": "1010",
     "0001": "0000",
     "0010": "1001",
@@ -20,78 +39,114 @@ inverse_substitution_box = {
 }
 
 
-inverse_constant_matrix = [
+INVERSE_CONSTANT_MATRIX = [
     [9, 2],
     [2, 9],
 ]
 
-inverse_constant_matrix_binary = [
+INVERSE_CONSTANT_MATRIX_BINARY = [
     [0x9, 0x2],
     [0x2, 0x9],
 ]
 
+RCON_1 = "1110"
+RCON_2 = "1010"
+
 
 def main():
     """This is the main function."""
-    sub_nibbles = []
-    shifted_row = []
-    mixed_column = []
 
-    text_block = input("Enter a text block: ")
-    if len(text_block) > 4:
+    cipher_text_block = input("Enter the ciphertext block = ")
+    if len(cipher_text_block) > 4:
         print("Text Block invalid. It should have exactly 4 characters.")
         return
-    text_block = text_block.zfill(4)
+    cipher_text_block = cipher_text_block.zfill(4)
 
-    # Convert the hexadecimal to binary and remove the '0b' prefix and make the string 16 bit
-    text_binary_value = bin(int(text_block, 16))[2:].zfill(16)
-
-    sub_nibbles = sub_nibbles_func(text_binary_value)
-    sub_nibbles_string = "".join(sub_nibbles)
-    sub_nibbles_binary_value = bin(int("".join(sub_nibbles), 16))[2:]
-    print(f"SubNibbles({text_block}) = ", sub_nibbles_string)
-
-    shifted_row = shift_rows(text_binary_value)
-    shifted_row_string = "".join(shifted_row)
-    print(f"ShiftRows({text_block}) = ", shifted_row_string)
-
-    mixed_column = mix_columns(text_block)
-    mixed_column_string = "".join(mixed_column)
-    print(f"MixColumns({text_block}) = ", mixed_column_string)
-
-    key = input("Enter a key: ")
-    if len(key) > 4:
+    decryption_key = input("Enter the decryption key = ")
+    if len(decryption_key) > 4:
         print("Key invalid. It should have exactly 4 characters.")
         return
-    key = key.zfill(4)
-    # Convert the hexadecimal to binary and remove the '0b' prefix
-    key_binary_value = bin(int(key, 16))[2:]
-    key_binary_value = key_binary_value.zfill(16)
-    round_key_one, round_key_two = generate_round_keys(key_binary_value)
-    round_key_one_string = "".join(
-        [hex(int(binary, 2))[2:] for binary in round_key_one]
-    )
-    round_key_two_string = "".join(
-        [hex(int(binary, 2))[2:] for binary in round_key_two]
-    )
+    decryption_key = decryption_key.zfill(4)
+    decryption_key_binary_value = bin(int(decryption_key, 16))[2:].zfill(16)
+    cipher_text_binary_value = bin(int(cipher_text_block, 16))[2:].zfill(16)
 
-    print(
-        f"GenerateRoundKets({key}) = ({round_key_one_string}, {round_key_two_string})"
+    decrypted_block = decrypt_data(
+        cipher_text_binary_value, decryption_key_binary_value
     )
+    print(f"Decrypted Block: {decrypted_block}")
+
+
+def decrypt_data(cipher_text_binary_value, decryption_key):
+    """This function decrypts the cipher text using the decryption key."""
+
+    round_key_one, round_key_two = generate_round_keys(decryption_key)
+    round_key_one = "".join(round_key_one)
+    round_key_two = "".join(round_key_two)
+
+    # Round 1
+    shifted_rows_data = shift_rows(cipher_text_binary_value)
+    shifted_rows_data = "".join(shifted_rows_data)
+    shifted_rows_data = bin(int(shifted_rows_data, 16))[2:].zfill(16)
+    after_round_key_xor_data = bitwise_xor(shifted_rows_data, round_key_two)
+    sub_nibbles_data = sub_nibbles_func(after_round_key_xor_data)
+    sub_nibbles_data = "".join(sub_nibbles_data)
+    sub_nibbles_data = bin(int(sub_nibbles_data, 16))[2:].zfill(16)
+
+    # Round 2
+    shifted_rows_data = shift_rows(sub_nibbles_data)
+    shifted_rows_data = "".join(shifted_rows_data)
+    mixed_columns_data = mix_columns(shifted_rows_data)
+    mixed_columns_data = "".join(mixed_columns_data)
+    mixed_columns_data = bin(int(mixed_columns_data, 16))[2:].zfill(16)
+    after_round_key_xor_data = bitwise_xor(mixed_columns_data, round_key_one)
+    sub_nibbles_data = sub_nibbles_func(after_round_key_xor_data)
+
+    decrypted_data = []
+    for hex_value in sub_nibbles_data:
+        decrypted_data.append(hex_value)
+
+    return "".join(decrypted_data)
 
 
 def sub_nibbles_func(binary_value):
     """This function performs the substitution of nibbles."""
     sub_nibbles_data = []
-
     # Check if the input is 4 bits or 16 bits
     if len(binary_value) == 4:
         # Input is already a 4-bit nibble
-        sub_nibbles_data.append(substitution_box[binary_value])
+        sub_nibbles_data.append(INVERSE_SUBSTITUTION_BOX[binary_value])
     elif len(binary_value) == 16:
         # Input is a 16-bit binary value, split it into 4-bit nibbles
         for i in range(0, 16, 4):
-            sub_nibbles_data.append(substitution_box[binary_value[i : i + 4]])
+            sub_nibbles_data.append(
+                INVERSE_SUBSTITUTION_BOX[binary_value[i : i + 4]]
+            )
+    else:
+        raise ValueError("Input length must be either 4 or 16 bits")
+
+    hexadecimal_values = []
+
+    for binary_value in sub_nibbles_data:
+        # Convert the binary to an integer and then to a hexadecimal nibble
+        hex_value = hex(int(binary_value, 2))[2:]
+
+        # Append the hexadecimal nibble to the list
+        hexadecimal_values.append(hex_value)
+
+    return hexadecimal_values
+
+
+def sub_nibbles_func_decrypted(binary_value):
+    """This function performs the substitution of nibbles."""
+    sub_nibbles_data = []
+    # Check if the input is 4 bits or 16 bits
+    if len(binary_value) == 4:
+        # Input is already a 4-bit nibble
+        sub_nibbles_data.append(SUBSTITUTION_BOX[binary_value])
+    elif len(binary_value) == 16:
+        # Input is a 16-bit binary value, split it into 4-bit nibbles
+        for i in range(0, 16, 4):
+            sub_nibbles_data.append(SUBSTITUTION_BOX[binary_value[i : i + 4]])
     else:
         raise ValueError("Input length must be either 4 or 16 bits")
 
@@ -127,17 +182,25 @@ def mix_columns(hex_input_value):
     processed_nibbles = []
 
     d0 = finite_field_multiply(
-        int(nibbles[0], 2), constant_matrix_binary[0][0]
-    ) ^ finite_field_multiply(int(nibbles[1], 2), constant_matrix_binary[0][1])
+        int(nibbles[0], 2), INVERSE_CONSTANT_MATRIX_BINARY[0][0]
+    ) ^ finite_field_multiply(
+        int(nibbles[1], 2), INVERSE_CONSTANT_MATRIX_BINARY[0][1]
+    )
     d1 = finite_field_multiply(
-        int(nibbles[0], 2), constant_matrix_binary[1][0]
-    ) ^ finite_field_multiply(int(nibbles[1], 2), constant_matrix_binary[1][1])
+        int(nibbles[0], 2), INVERSE_CONSTANT_MATRIX_BINARY[1][0]
+    ) ^ finite_field_multiply(
+        int(nibbles[1], 2), INVERSE_CONSTANT_MATRIX_BINARY[1][1]
+    )
     d2 = finite_field_multiply(
-        int(nibbles[2], 2), constant_matrix_binary[0][0]
-    ) ^ finite_field_multiply(int(nibbles[3], 2), constant_matrix_binary[0][1])
+        int(nibbles[2], 2), INVERSE_CONSTANT_MATRIX_BINARY[0][0]
+    ) ^ finite_field_multiply(
+        int(nibbles[3], 2), INVERSE_CONSTANT_MATRIX_BINARY[0][1]
+    )
     d3 = finite_field_multiply(
-        int(nibbles[2], 2), constant_matrix_binary[1][0]
-    ) ^ finite_field_multiply(int(nibbles[3], 2), constant_matrix_binary[1][1])
+        int(nibbles[2], 2), INVERSE_CONSTANT_MATRIX_BINARY[1][0]
+    ) ^ finite_field_multiply(
+        int(nibbles[3], 2), INVERSE_CONSTANT_MATRIX_BINARY[1][1]
+    )
 
     processed_nibbles.append(hex(d0)[2:])
     processed_nibbles.append(hex(d1)[2:])
@@ -158,11 +221,13 @@ def generate_round_keys(binary_key):
         bitwise_xor(
             bitwise_xor(
                 binary_key_chunks[0],
-                bin(int(sub_nibbles_func(binary_key_chunks[3])[0], 16))[
-                    2:
-                ].zfill(4),
+                bin(
+                    int(
+                        sub_nibbles_func_decrypted(binary_key_chunks[3])[0], 16
+                    )
+                )[2:].zfill(4),
             ),
-            Rcon_1,
+            RCON_1,
         )
     )
     round_key_one.append(bitwise_xor(binary_key_chunks[1], round_key_one[0]))
@@ -173,11 +238,11 @@ def generate_round_keys(binary_key):
         bitwise_xor(
             bitwise_xor(
                 round_key_one[0],
-                bin(int(sub_nibbles_func(round_key_one[3])[0], 16))[2:].zfill(
-                    4
-                ),
+                bin(int(sub_nibbles_func_decrypted(round_key_one[3])[0], 16))[
+                    2:
+                ].zfill(4),
             ),
-            Rcon_2,
+            RCON_2,
         )
     )
     round_key_two.append(bitwise_xor(round_key_one[1], round_key_two[0]))
